@@ -1,0 +1,150 @@
+import csv
+import os
+from datetime import datetime
+
+FILE_NAME = "expenses.csv"
+
+# Create the file if it does not exist
+if not os.path.exists(FILE_NAME):
+    with open(FILE_NAME, "w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow(["ID", "Date", "Category", "Description", "Amount"])
+
+print("=" * 45)
+print("       PERSONAL EXPENSE TRACKER")
+print("=" * 45)
+
+while True:
+    print("\n1. Add Expense")
+    print("2. View All Expenses")
+    print("3. View Total Spending")
+    print("4. Category-wise Report")
+    print("5. Delete Expense")
+    print("6. Exit")
+
+    choice = input("\nEnter your choice: ")
+
+    if choice == "1":
+        category = input("Enter category (Food/Travel/Shopping/etc.): ")
+        description = input("Enter description: ")
+
+        try:
+            amount = float(input("Enter amount (₹): "))
+
+            if amount <= 0:
+                print("Amount must be greater than zero.")
+                continue
+
+        except ValueError:
+            print("Invalid amount. Please enter a number.")
+            continue
+
+        date = datetime.now().strftime("%d-%m-%Y")
+
+        with open(FILE_NAME, "r", newline="") as file:
+            rows = list(csv.reader(file))
+
+        expense_id = 1
+
+        for row in rows[1:]:
+            expense_id = max(expense_id, int(row[0]) + 1)
+
+        with open(FILE_NAME, "a", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow([
+                expense_id,
+                date,
+                category,
+                description,
+                amount
+            ])
+
+        print("Expense added successfully!")
+
+    elif choice == "2":
+        with open(FILE_NAME, "r", newline="") as file:
+            reader = csv.reader(file)
+            rows = list(reader)
+
+        if len(rows) == 1:
+            print("No expenses recorded yet.")
+
+        else:
+            print("\n" + "-" * 75)
+            print(f"{'ID':<5}{'Date':<15}{'Category':<15}"
+                  f"{'Description':<25}{'Amount (₹)':>12}")
+            print("-" * 75)
+
+            for row in rows[1:]:
+                print(f"{row[0]:<5}{row[1]:<15}{row[2]:<15}"
+                      f"{row[3]:<25}{float(row[4]):>12.2f}")
+
+    elif choice == "3":
+        total = 0
+
+        with open(FILE_NAME, "r", newline="") as file:
+            reader = csv.reader(file)
+            rows = list(reader)
+
+        for row in rows[1:]:
+            total += float(row[4])
+
+        print(f"\nTotal Spending: ₹{total:.2f}")
+
+    elif choice == "4":
+        category_totals = {}
+
+        with open(FILE_NAME, "r", newline="") as file:
+            reader = csv.reader(file)
+            rows = list(reader)
+
+        for row in rows[1:]:
+            category = row[2]
+            amount = float(row[4])
+
+            if category in category_totals:
+                category_totals[category] += amount
+            else:
+                category_totals[category] = amount
+
+        if not category_totals:
+            print("No expenses available for the report.")
+
+        else:
+            print("\nCATEGORY-WISE EXPENSE REPORT")
+            print("-" * 35)
+
+            for category, amount in category_totals.items():
+                print(f"{category:<20} ₹{amount:.2f}")
+
+    elif choice == "5":
+        delete_id = input("Enter Expense ID to delete: ")
+
+        with open(FILE_NAME, "r", newline="") as file:
+            rows = list(csv.reader(file))
+
+        updated_rows = [rows[0]]
+        found = False
+
+        for row in rows[1:]:
+            if row[0] == delete_id:
+                found = True
+            else:
+                updated_rows.append(row)
+
+        if found:
+            with open(FILE_NAME, "w", newline="") as file:
+                writer = csv.writer(file)
+                writer.writerows(updated_rows)
+
+            print("Expense deleted successfully!")
+
+        else:
+            print("Expense ID not found.")
+
+    elif choice == "6":
+        print("Thank you for using Expense Tracker!")
+        break
+
+    else:
+        print("Invalid choice. Please try again.")
